@@ -1808,15 +1808,14 @@ DefaultItemParity(char *id)
 void
 ProcessPassword(CONSENT *c, char *id)
 {
+	/* free the existing password */
     if (c->password != (char *)0) {
 	free(c->password);
 	c->password = (char *)0;
     }
-    if ((id == (char *)0) || (*id == '\000')) {
-	c->password = (char *)0;
-	return;
+    if ((id != (char *)0) && (*id != '\000')) {
+	c->password = strdup(id);
     }
-    c->password = strdup(id);
 }
 
 void
