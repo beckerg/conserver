@@ -2029,6 +2029,7 @@ HuntForConsole(GRPENT *pGE, char *name)
      * were already done by the master process, so
      * the first match should be what the user wants
      */
+    CONSENT *pCEfirstcim = (CONSENT *)0;
     CONSENT *pCE = (CONSENT *)0;
 
     if (name == (char *)0)
@@ -2036,15 +2037,35 @@ HuntForConsole(GRPENT *pGE, char *name)
 
     for (pCE = pGE->pCElist; pCE != (CONSENT *)0; pCE = pCE->pCEnext) {
 	NAMES *n = (NAMES *)0;
-	if (strcasecmp(name, pCE->server) == 0)
-	    break;
+
+	/* Return immediately if we find an exact match.
+	 */
+	if (strcmp(name, pCE->server) == 0)
+	    return pCE;
 	for (n = pCE->aliases; n != (NAMES *)0; n = n->next) {
-	    if (strcasecmp(name, n->name) == 0)
-		break;
+	    if (strcmp(name, n->name) == 0)
+		return pCE;
 	}
-	if (n != (NAMES *)0)
-	    break;
+
+	/* Next, search for and remember the first case-insenitive match.
+	 * If, after examining the entire list, there are no exact matches
+	 * then we'll return the first case-insensitive matching console.
+	 */
+	if (!pCEfirstcim) {
+	    if (strcasecmp(name, pCE->server) == 0) {
+		pCEfirstcim = pCE;
+		continue;
+	    }
+	    for (n = pCE->aliases; n != (NAMES *)0; n = n->next) {
+		if (strcasecmp(name, n->name) == 0) {
+		    pCEfirstcim = pCE;
+		    break;
+		}
+	    }
+	}
     }
+    pCE = pCEfirstcim;
+
     if (pCE == (CONSENT *)0 && config->autocomplete == FLAGTRUE) {
 	NAMES *n = (NAMES *)0;
 	int len = strlen(name);
