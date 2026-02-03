@@ -1,6 +1,26 @@
                                 CHANGES
                                 =======
 
+version 8.3.0 (February 2, 2026):
+        - Don't use `true` variable (Stanisław Pitucha <stan.pitucha@envato.com>)
+        - Add VPATH to Makefile.in (saproj <saproj@gmail.com>)
+        - FileUnopen: always return a valid file descriptor (Jeff Moyer <jmoyer@redhat.com>)
+        - fix SEGFAULT on early exit with IPv6 enabled (Bjørn Mork <bjorn@mork.no>)
+        - In AddrsMatch, keep copies of addrinfos to free. (Darren Tucker <dtucker@dtucker.net>)
+        - Increase buffer size for GSSAPI exchanges (Alexander Bokovoy <abokovoy@redhat.com>)
+        - Show "(inactive)" rather than an invalid pty device name for ondemand consoles that
+          are closed. Show "(inactive)" rather than "(null)" for ondemand consoles that have
+          never been opened. (Greg Becker <becker.greg@att.net>)
+        - Prevent spy-mode clients from being promoted to the attached/writable state. (Greg Becker <becker.greg@att.net>)
+        - autoconf upgrade (Jörg Sommer <joerg@jo-so.de>)
+        - reinitcheck allows time units (Jacek Tomasiak <jtomasiak@arista.com>)
+        - reduce level of string alloc management debug messages (Greg A. Woods <woods@robohack.ca>)
+        - fix bug with parser and "#" lines, fix debug output in ParseFile()
+        - Fix clobbering of breaklist and replstring (Anton Lundin <glance@ac2.se>)
+        - Use strcmp() rather than strcasecmp() to compare console names when reading the config
+          file and creating the list of consoles. (Greg Becker <becker.greg@att.net>)
+        - Added passwordfile config option (Jason Ni <jni@hudson-trading.com>)
+
 version 8.2.7 (July 7, 2022):
         - configure.ac: autoconf-2.70 fix (Lars Wendler <polynomial-c@gentoo.org>)
         - Add high baud rates (Peter Chubb <Peter.Chubb@data61.csiro.au>)
