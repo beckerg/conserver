@@ -568,6 +568,8 @@ DestroyParserDefaultOrConsole(CONSENT *c, CONSENT **ph, CONSENT ***pt)
 	free(c->username);
     if (c->password != (char *)0)
 	free(c->password);
+    if (c->passwordfile != (char *)0)
+	free(c->passwordfile);
     if (c->ipmikg != (STRING *)0)
 	DestroyString(c->ipmikg);
 #endif
@@ -782,6 +784,12 @@ ApplyDefault(CONSENT *d, CONSENT *c)
 	if (c->password != (char *)0)
 	    free(c->password);
 	if ((c->password = StrDup(d->password)) == (char *)0)
+	    OutOfMem();
+    }
+    if (d->passwordfile != (char *)0) {
+	if (c->passwordfile != (char *)0)
+	    free(c->passwordfile);
+	if ((c->passwordfile = StrDup(d->passwordfile)) == (char *)0)
 	    OutOfMem();
     }
     if (d->ipmikg != (STRING *)0) {
@@ -1800,11 +1808,66 @@ DefaultItemParity(char *id)
 void
 ProcessPassword(CONSENT *c, char *id)
 {
-    if ((id == (char *)0) || (*id == '\000')) {
+	/* free the existing password */
+    if (c->password != (char *)0) {
+	free(c->password);
 	c->password = (char *)0;
+    }
+    if ((id != (char *)0) && (*id != '\000')) {
+	c->password = strdup(id);
+    }
+}
+
+void
+ProcessPasswordfile(CONSENT *c, char *id)
+{
+    FILE *fp;
+    char buf[256];
+    char *p;
+
+    if (c->passwordfile != (char *)0) {
+	free(c->passwordfile);
+	c->passwordfile = (char *)0;
+    }
+
+    if ((id == (char *)0) || (*id == '\000')) {
+	c->passwordfile = (char *)0;
 	return;
     }
-    c->password = strdup(id);
+
+    c->passwordfile = strdup(id);
+
+    /* Read from file to get the password */
+    if ((fp = fopen(id, "r")) == NULL) {
+	if (isMaster)
+	    Error("cannot open password file `%s': %s [%s:%d]",
+		  id, strerror(errno), file, line);
+	return;
+    }
+
+    if (fgets(buf, sizeof(buf), fp) == NULL) {
+	if (isMaster)
+	    Error("cannot read password from `%s' [%s:%d]",
+		  id, file, line);
+	fclose(fp);
+	return;
+    }
+    fclose(fp);
+
+    /* Strip trailing newline/whitespace */
+    p = buf + strlen(buf) - 1;
+    while (p >= buf && (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t'))
+	*p-- = '\0';
+
+    /* Free existing password */
+    if (c->password != (char *)0) {
+	if (isMaster)
+	    Msg("warning: [%s] has both 'password' and 'passwordfile' defined - overwriting with passwordfile [%s:%d]",
+		c->server ? c->server : "unknown", file, line);
+	free(c->password);
+    }
+
+    c->password = strdup(buf);
 }
 
 void
@@ -1812,6 +1875,13 @@ DefaultItemPassword(char *id)
 {
     CONDDEBUG((1, "DefaultItemPassword(%s) [%s:%d]", id, file, line));
     ProcessPassword(parserDefaultTemp, id);
+}
+
+void
+DefaultItemPasswordfile(char *id)
+{
+    CONDDEBUG((1, "DefaultItemPasswordfile(%s) [%s:%d]", id, file, line));
+    ProcessPasswordfile(parserDefaultTemp, id);
 }
 #endif /*freeipmi */
 
@@ -3041,6 +3111,17 @@ ConsoleAdd(CONSENT *c)
 		    SwapStr(&pCEmatch->password, &c->password);
 		    closeMatch = 0;
 		}
+		if (pCEmatch->passwordfile != (char *)0 &&
+		    c->passwordfile != (char *)0) {
+		    if (strcmp(pCEmatch->passwordfile, c->passwordfile) != 0) {
+			SwapStr(&pCEmatch->passwordfile, &c->passwordfile);
+			closeMatch = 0;
+		    }
+		} else if (pCEmatch->passwordfile != (char *)0 ||
+			   c->passwordfile != (char *)0) {
+		    SwapStr(&pCEmatch->passwordfile, &c->passwordfile);
+		    closeMatch = 0;
+		}
 		if (pCEmatch->ipmiprivlevel != c->ipmiprivlevel) {
 		    pCEmatch->ipmiprivlevel = c->ipmiprivlevel;
 		    closeMatch = 0;
@@ -3128,9 +3209,9 @@ ConsoleAdd(CONSENT *c)
 
 	SwapStr(&pCEmatch->motd, &c->motd);
 	SwapStr(&pCEmatch->idlestring, &c->idlestring);
-	SwapStr(&pCEmatch->replstring, &c->breaklist);
+	SwapStr(&pCEmatch->replstring, &c->replstring);
 	SwapStr(&pCEmatch->tasklist, &c->tasklist);
-	SwapStr(&pCEmatch->breaklist, &c->tasklist);
+	SwapStr(&pCEmatch->breaklist, &c->breaklist);
 	pCEmatch->portinc = c->portinc;
 	pCEmatch->portbase = c->portbase;
 	pCEmatch->spinmax = c->spinmax;
@@ -3772,6 +3853,13 @@ ConsoleItemPassword(char *id)
 {
     CONDDEBUG((1, "ConsoleItemPassword(%s) [%s:%d]", id, file, line));
     ProcessPassword(parserConsoleTemp, id);
+}
+
+void
+ConsoleItemPasswordfile(char *id)
+{
+    CONDDEBUG((1, "ConsoleItemPasswordfile(%s) [%s:%d]", id, file, line));
+    ProcessPasswordfile(parserConsoleTemp, id);
 }
 #endif /*freeipmi */
 
@@ -4915,6 +5003,7 @@ ITEM keyDefault[] = {
     {"ipmiprivlevel", DefaultItemIpmiPrivLevel},
     {"ipmiworkaround", DefaultItemIpmiWorkaround},
     {"password", DefaultItemPassword},
+    {"passwordfile", DefaultItemPasswordfile},
     {"username", DefaultItemUsername},
 #endif
     {(char *)0, (void *)0}
@@ -4964,6 +5053,7 @@ ITEM keyConsole[] = {
     {"ipmiprivlevel", ConsoleItemIpmiPrivLevel},
     {"ipmiworkaround", ConsoleItemIpmiWorkaround},
     {"password", ConsoleItemPassword},
+    {"passwordfile", ConsoleItemPasswordfile},
     {"username", ConsoleItemUsername},
 #endif
     {(char *)0, (void *)0}
