@@ -25,8 +25,6 @@ LDLIBS	= @LIBS@
 LINK.o = $(LINK.c)
 @SET_MAKE@
 
-vpath %.c $(srcdir)
-
 ### Makefile rules - no user-servicable parts below
 
 CONSOLE_OBJS = console.o getpassword.o readconf.o ../conserver/cutil.o

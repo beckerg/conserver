@@ -30,7 +30,7 @@ AH_TEMPLATE([TRUST_UDS_CRED], [Defined if we trust credentials from UDS client])
 
 dnl ### Normal initialization. ######################################
 AC_INIT([conserver],[m4_esyscmd_s(./gen-version number)])
-AC_PREREQ([2.72])
+AC_PREREQ([2.71])
 AC_CONFIG_SRCDIR([conserver/main.c])
 AC_CONFIG_HEADERS([config.h])
 

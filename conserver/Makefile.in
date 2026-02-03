@@ -28,8 +28,6 @@ LDLIBS	= @LIBS@ @CONSLIBS@
 LINK.o = $(LINK.c)
 @SET_MAKE@
 
-vpath %.c $(srcdir)
-
 ### Makefile rules - no user-servicable parts below
 
 CONSERVER_OBJS = access.o client.o consent.o group.o main.o master.o \
