@@ -1052,6 +1052,21 @@ Use
 during IPMI authentication.
 If the null string (``\f3""\fP'') is used (the default), no password will be used.
 .TP
+\f3passwordfile\fP \f2filename\fP|\f3""\fP
+.br
+Read the IPMI password from
+.IR filename .
+The first line of the file will be used as the password with trailing
+whitespace stripped.
+If both
+.B password
+and
+.B passwordfile
+are specified,
+.B passwordfile
+takes precedence.
+If the null string (``\f3""\fP'') is used (the default), no password file will be used.
+.TP
 \f3port\fP \f2number\fP|\f2name\fP
 .br
 Set the port used to access the console.
