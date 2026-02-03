@@ -1024,7 +1024,7 @@ ReUp(GRPENT *pGE, short automatic)
     /* update all the timers */
     if (automatic == 0 || automatic == 2) {
 	if (config->reinitcheck)
-	    timers[T_REINIT] = tyme + (config->reinitcheck * 60);
+	    timers[T_REINIT] = tyme + config->reinitcheck;
     }
     if (!fNoautoreup)
 	timers[T_AUTOUP] = tyme + 60;
@@ -1965,13 +1965,19 @@ int
 AttemptGSSAPI(CONSCLIENT *pCL)
 {
     int nr, ret = 0;
-    char buf[1024];
+    char *buf = NULL;
     gss_buffer_desc sendtok, recvtok, dbuf;
     gss_ctx_id_t gssctx = GSS_C_NO_CONTEXT;
     OM_uint32 stmaj, stmin, mctx, dmin;
     gss_name_t user = 0;
 
-    if ((nr = FileRead(pCL->fd, buf, sizeof(buf))) <= 0) {
+    buf = malloc(pCL->tokenSize);
+    if (buf == NULL) {
+	Error("Unable to allocate a buffer for GSSAPI token");
+	return -1;
+    }
+    if ((nr = FileRead(pCL->fd, buf, pCL->tokenSize)) <= 0) {
+	free(buf);
 	return nr;
     }
     recvtok.value = buf;
@@ -2010,6 +2016,8 @@ AttemptGSSAPI(CONSCLIENT *pCL)
 	    Error("GSSAPI didn't work, %*s", dbuf.length, dbuf.value);
 	    ret = -1;
     }
+
+    free(buf);
     return ret;
 }
 #endif
@@ -2022,6 +2030,7 @@ HuntForConsole(GRPENT *pGE, char *name)
      * were already done by the master process, so
      * the first match should be what the user wants
      */
+    CONSENT *pCEfirstcim = (CONSENT *)0;
     CONSENT *pCE = (CONSENT *)0;
 
     if (name == (char *)0)
@@ -2029,15 +2038,35 @@ HuntForConsole(GRPENT *pGE, char *name)
 
     for (pCE = pGE->pCElist; pCE != (CONSENT *)0; pCE = pCE->pCEnext) {
 	NAMES *n = (NAMES *)0;
-	if (strcasecmp(name, pCE->server) == 0)
-	    break;
+
+	/* Return immediately if we find an exact match.
+	 */
+	if (strcmp(name, pCE->server) == 0)
+	    return pCE;
 	for (n = pCE->aliases; n != (NAMES *)0; n = n->next) {
-	    if (strcasecmp(name, n->name) == 0)
-		break;
+	    if (strcmp(name, n->name) == 0)
+		return pCE;
 	}
-	if (n != (NAMES *)0)
-	    break;
+
+	/* Next, search for and remember the first case-insenitive match.
+	 * If, after examining the entire list, there are no exact matches
+	 * then we'll return the first case-insensitive matching console.
+	 */
+	if (!pCEfirstcim) {
+	    if (strcasecmp(name, pCE->server) == 0) {
+		pCEfirstcim = pCE;
+		continue;
+	    }
+	    for (n = pCE->aliases; n != (NAMES *)0; n = n->next) {
+		if (strcasecmp(name, n->name) == 0) {
+		    pCEfirstcim = pCE;
+		    break;
+		}
+	    }
+	}
     }
+    pCE = pCEfirstcim;
+
     if (pCE == (CONSENT *)0 && config->autocomplete == FLAGTRUE) {
 	NAMES *n = (NAMES *)0;
 	int len = strlen(name);
@@ -3099,12 +3128,31 @@ DoClientRead(GRPENT *pGE, CONSCLIENT *pCLServing)
 		    }
 #endif
 #if HAVE_GSSAPI
+#define MAX_GSSAPI_TOKSIZE 64*1024
 		} else if (pCLServing->iState == S_IDENT &&
 			   strcmp(pcCmd, "gssapi") == 0) {
-		    FileWrite(pCLServing->fd, FLAGFALSE, "ok\r\n", -1);
-		    /* Change the I/O mode right away, we'll do the read
-		     * and accept when the select gets back to us */
-		    pCLServing->ioState = INGSSACCEPT;
+		    if (pcArgs == (char *)0) {
+			FileWrite(pCLServing->fd, FLAGFALSE,
+				  "gssapi requires argument\r\n", -1);
+		    } else {
+			FileWrite(pCLServing->fd, FLAGFALSE, "ok\r\n", -1);
+			/* Read the token size but limit it to 64K,
+			 * that's practical limit for GSSAPI krb5 mechanism.
+			 *
+			 * The client connection will be rejected for large
+			 * requests as server will not be able to parse
+			 * incomplete ASN.1 but this is intentional. */
+			pCLServing->tokenSize = (size_t) strtol(pcArgs, NULL, 10);
+			if (pCLServing->tokenSize > MAX_GSSAPI_TOKSIZE) {
+			    FileWrite(pCLServing->fd, FLAGFALSE,
+			              "gssapi token size too large\r\n", -1);
+			    pCLServing->tokenSize = MAX_GSSAPI_TOKSIZE;
+			}
+
+			/* Change the I/O mode right away, we'll do the read
+			 * and accept when the select gets back to us */
+			pCLServing->ioState = INGSSACCEPT;
+		    }
 #endif
 		} else if (pCLServing->iState == S_IDENT &&
 			   strcmp(pcCmd, "login") == 0) {

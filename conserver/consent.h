@@ -109,6 +109,7 @@ typedef struct consent {	/* console information                  */
     int ipmiciphersuite;	/* IPMI cipher suite                    */
     char *username;		/* Username to log as                   */
     char *password;		/* Login Password                       */
+    char *passwordfile;		/* File containing password             */
     STRING *ipmikg;		/* IPMI k_g auth key                    */
 #endif
     /* type == HOST */

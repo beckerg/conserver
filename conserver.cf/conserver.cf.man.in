@@ -385,11 +385,14 @@ Turn redirection on or off (see the
 .B \-R
 command-line flag).
 .TP
-\f3reinitcheck\fP \f2number\fP
+\f3reinitcheck\fP \f2number\fP[\f3s\fP|\f3m\fP]
 .br
 Set the number of minutes used between reinitialization checks (see the
 .B \-O
 command-line flag).
+If an `s' or `m' is used after
+.IR number ,
+the specified time is interpreted as seconds or minutes.
 .TP
 \f3secondaryport\fP \f2number\fP|\f2name\fP
 .br
@@ -1048,6 +1051,21 @@ Use
 .I password
 during IPMI authentication.
 If the null string (``\f3""\fP'') is used (the default), no password will be used.
+.TP
+\f3passwordfile\fP \f2filename\fP|\f3""\fP
+.br
+Read the IPMI password from
+.IR filename .
+The first line of the file will be used as the password with trailing
+whitespace stripped.
+If both
+.B password
+and
+.B passwordfile
+are specified,
+.B passwordfile
+takes precedence.
+If the null string (``\f3""\fP'') is used (the default), no password file will be used.
 .TP
 \f3port\fP \f2number\fP|\f2name\fP
 .br
