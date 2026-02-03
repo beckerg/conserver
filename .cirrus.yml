@@ -8,25 +8,25 @@ freebsd_14_task:
     - pkg install -y autoconf automake
     - ./package/setup-configure
   basic_script: &basic
-    - "[ -f Makefile ] && make distclean"
+    - "[ -f Makefile ] && gmake distclean"
     - ./configure || { cat config.log; exit 1; }
-    - make
-    - make test
+    - gmake
+    - gmake test
   uds_script: &uds
-    - "[ -f Makefile ] && make distclean"
+    - "[ -f Makefile ] && gmake distclean"
     - ./configure --with-trust-uds-cred --with-uds || { cat config.log; exit 1; }
-    - make
-    - make test
+    - gmake
+    - gmake test
   pam_ssl_script: &pamssl
-    - "[ -f Makefile ] && make distclean"
+    - "[ -f Makefile ] && gmake distclean"
     - ./configure --with-pam --with-openssl || { cat config.log; exit 1; }
-    - make
-    - make test
+    - gmake
+    - gmake test
   gssapi_script: &gssapi
-    - "[ -f Makefile ] && make distclean"
+    - "[ -f Makefile ] && gmake distclean"
     - ./configure --with-gssapi || { cat config.log; exit 1; }
-    - make
-    - make test
+    - gmake
+    - gmake test
 
 linux_gcc_task:
   container:
@@ -36,13 +36,3 @@ linux_gcc_task:
   basic_script: *basic
   uds_script: *uds
   pam_ssl_script: *pamssl
-
-#macos_task:
-#  osx_instance:
-#    image: mojave-xcode-10.1
-#  install_script:
-#    - brew install autoconf automake
-#    - ./package/setup-configure
-#  basic_script: *basic
-#  uds_script: *uds
-#  pam_ssl_script: *pamssl
