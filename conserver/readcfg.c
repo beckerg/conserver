@@ -590,7 +590,7 @@ CONSENT *
 FindParserDefaultOrConsole(CONSENT *c, char *id)
 {
     for (; c != (CONSENT *)0; c = c->pCEnext) {
-	if (strcasecmp(id, c->server) == 0)
+	if (strcmp(id, c->server) == 0)
 	    return c;
     }
     return c;
@@ -2767,7 +2767,7 @@ ConsoleAdd(CONSENT *c)
 	    for (ppCE = &pGEmatch->pCElist, pCEmatch = pGEmatch->pCElist;
 		 pCEmatch != (CONSENT *)0;
 		 ppCE = &pCEmatch->pCEnext, pCEmatch = pCEmatch->pCEnext) {
-		if (strcasecmp(c->server, pCEmatch->server) == 0) {
+		if (strcmp(c->server, pCEmatch->server) == 0) {
 		    /* extract pCEmatch from the linked list */
 		    *ppCE = pCEmatch->pCEnext;
 		    pGEmatch->imembers--;
@@ -3605,10 +3605,10 @@ FindConsoleName(CONSENT *c, char *id)
 {
     NAMES *a = (NAMES *)0;
     for (; c != (CONSENT *)0; c = c->pCEnext) {
-	if (strcasecmp(id, c->server) == 0)
+	if (strcmp(id, c->server) == 0)
 	    return c;
 	for (a = c->aliases; a != (NAMES *)0; a = a->next)
-	    if (strcasecmp(id, a->name) == 0)
+	    if (strcmp(id, a->name) == 0)
 		return c;
     }
     return c;
